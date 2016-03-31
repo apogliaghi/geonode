@@ -322,6 +322,8 @@ def geoserver_rest_proxy(request, proxy_path, downstream_path):
     http.add_credentials(*(ogc_server_settings.credentials))
     headers = dict()
 
+	do_style_update = False
+
     if request.method in ("POST", "PUT") and "CONTENT_TYPE" in request.META:
         headers["Content-Type"] = request.META["CONTENT_TYPE"]
         # if user is not authorized, we must stop him
@@ -336,12 +338,17 @@ def geoserver_rest_proxy(request, proxy_path, downstream_path):
                     content_type="text/plain",
                     status=401)
             if downstream_path == 'rest/styles':
-                style_update(request, url)
+                # set style to be updated
+                do_style_update = True
 
     response, content = http.request(
         url, request.method,
         body=request.body or None,
         headers=headers)
+
+    # update the style if it is changed
+    if do_style_update is True:
+        style_update(request, url)
 
     return HttpResponse(
         content=content,
